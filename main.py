@@ -1,40 +1,69 @@
 from fasthtml.common import *
+from monsterui.all import *
+from dotenv import load_dotenv
+import requests, csv, io
 
-app, rt = fast_app(hdrs=(picolink))
+# Load environment variables from .env file
+load_dotenv()
+
+
+def get_sheet_data(sheet_url):
+    response = requests.get(sheet_url)
+    if response.status_code != 200:
+        return {}
+    data = response.text
+    reader = csv.DictReader(io.StringIO(data))
+    json_list = list(reader)
+    return json_list
+
+
+app, rt = fast_app(hdrs=Theme.blue.headers(), live=True)
+
+
+def ScholarshipRow(icon, name, desc, is_link):
+    if is_link:
+        return Li(cls="-mx-1")(
+            A(
+                DivLAligned(
+                    UkIcon(icon), Div(P(name), P(desc, cls=TextPresets.muted_sm))
+                ),
+                href=desc,
+                target="_blank",
+            )
+        )
+    return Li(cls="-mx-1")(
+        A(DivLAligned(UkIcon(icon), Div(P(name), P(desc, cls=TextPresets.muted_sm))))
+    )
+
+
+def Scholarship(s):
+    details = (
+        ("mail", "Öppnar", s.get("application-open", ""), False),
+        ("bell", "Deadline", s.get("application-close", ""), False),
+        ("link", "Ansökan", s.get("application-link", ""), True),
+    )
+
+    return Card(
+        NavContainer(*[ScholarshipRow(*row) for row in details], cls=NavT.secondary),
+        header=(
+            H3(s.get("scholarship-name", "")),
+            Subtitle(s.get("scholarship-summary", "")),
+        ),
+        body_cls="pt-0",
+    )
 
 
 @rt("/")
 def get():
-    return (
-        Socials(
-            title="Vercel + FastHTML",
-            site_name="Vercel",
-            description="A demo of Vercel and FastHTML integration",
-            image="https://vercel.fyi/fasthtml-og",
-            url="https://fasthtml-template.vercel.app",
-            twitter_site="@vercel",
+    scholarships = get_sheet_data(os.getenv("SCHOLARSHIPS_URL"))
+
+    return Titled(
+        "Välkommen till stipendielistan! 🇸🇪🇺🇸",
+        P(
+            "Här samlar vi svenska och amerikanska stipendier för kandidatstudier i USA.",
+            cls=TextPresets.muted_sm,
         ),
-        Container(
-            Card(
-                Group(
-                    P(
-                        "FastHTML is a new next-generation web framework for fast, scalable web applications with minimal, compact code. It builds on top of popular foundations like ASGI and HTMX. You can now deploy FastHTML with Vercel CLI or by pushing new changes to your git repository.",
-                    ),
-                ),
-                header=(Titled("FastHTML + Vercel")),
-                footer=(
-                    P(
-                        A(
-                            "Deploy your own",
-                            href="https://vercel.com/templates/python/fasthtml-python-boilerplate",
-                        ),
-                        " or ",
-                        A("learn more", href="https://docs.fastht.ml/"),
-                        "about FastHTML.",
-                    )
-                ),
-            ),
-        ),
+        *[Scholarship(s) for s in scholarships],
     )
 
 
