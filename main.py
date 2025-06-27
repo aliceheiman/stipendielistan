@@ -17,7 +17,8 @@ def get_sheet_data(sheet_url):
     return json_list
 
 
-app, rt = fast_app(hdrs=Theme.blue.headers(), live=True)
+# app, rt = fast_app(hdrs=Theme.blue.headers(), live=True)
+app, rt = fast_app()
 
 
 def ScholarshipRow(icon, name, desc, is_link):
@@ -63,7 +64,7 @@ def get():
             "Här samlar vi svenska och amerikanska stipendier för kandidatstudier i USA.",
             cls=TextPresets.muted_sm,
         ),
-        *[Scholarship(s) for s in scholarships],
+        # *[Scholarship(s) for s in scholarships],
     )
 
 
